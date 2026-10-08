@@ -3,8 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { doc, getDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { db } from './firebase';
-import NetworkSimulator from './NetworkSimulator';
-import MiniNetworkSim from './MiniNetworkSim';
+
 
 export interface ExperienceData {
   id: string;
@@ -88,7 +87,6 @@ export default function App() {
   
   // Modals State
   const [isResumeOpen, setIsResumeOpen] = useState(false);
-  const [isNetworkSimOpen, setIsNetworkSimOpen] = useState(false);
   const [selectedExperience, setSelectedExperience] = useState<ExperienceData | null>(null);
   const [isEducationOpen, setIsEducationOpen] = useState(false);
   const [selectedCert, setSelectedCert] = useState<any | null>(null);
@@ -141,9 +139,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  const handleOpenFullEditor = useCallback(() => {
-    setIsNetworkSimOpen(true);
-  }, []);
+
 
   // Theme Toggle with View Transitions
   const toggleTheme = (e: React.MouseEvent) => {
@@ -477,12 +473,7 @@ export default function App() {
             {/* Live GitHub Projects Carousel (Secondary) */}
             <LiveProjectsCarousel />
 
-            {/* Network Simulator CTA (Mini Topology) */}
-            <BentoCard 
-              className="md:col-span-2 p-0 min-h-[500px] flex flex-col relative overflow-hidden group border border-borderSubtle transition-colors"
-            >
-              <MiniNetworkSim onOpenFullEditor={handleOpenFullEditor} />
-            </BentoCard>
+
 
             {/* Certifications & Events */}
             <BentoCard id="certifications" className="md:col-span-2 bg-gradient-to-br from-bgMain to-card relative overflow-hidden">
@@ -539,8 +530,7 @@ export default function App() {
       {/* iOS-Style Quick Resume Sheet */}
       <ResumeSheet isOpen={isResumeOpen} onClose={() => setIsResumeOpen(false)} />
 
-      {/* Network Simulator */}
-      {isNetworkSimOpen && <NetworkSimulator onClose={() => setIsNetworkSimOpen(false)} />}
+
 
       {/* Experience Details Modal */}
       <ExperienceModal 

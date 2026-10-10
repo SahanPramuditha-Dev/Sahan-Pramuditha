@@ -1,6 +1,6 @@
 # Sahan Pramuditha — Personal Portfolio
 
-![Portfolio preview](screenshots/portfolio-01.png)
+![Portfolio preview](screenshots/portfolio-01.png?v=2)
 
 A responsive personal portfolio for **Sahan Pramuditha**, an undergraduate software engineer focused on backend systems, cloud architecture, IT support, and practical product development.
 

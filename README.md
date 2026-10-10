@@ -20,7 +20,7 @@ The site combines a clean bento-style interface with interactive project preview
 
 | Portfolio views | Portfolio views |
 | --- | --- |
-| ![Portfolio view 01](screenshots/portfolio-01.png) | ![Portfolio view 02](screenshots/portfolio-02.png) |
+| ![Portfolio view 01](screenshots/portfolio-01.png?v=2) | ![Portfolio view 02](screenshots/portfolio-02.png) |
 | ![Portfolio view 03](screenshots/portfolio-03.png) | ![Portfolio view 04](screenshots/portfolio-04.png) |
 | ![Portfolio view 05](screenshots/portfolio-05.png) | ![Portfolio view 06](screenshots/portfolio-06.png) |
 | ![Portfolio view 07](screenshots/portfolio-07.png) | ![Portfolio view 08](screenshots/portfolio-08.png) |

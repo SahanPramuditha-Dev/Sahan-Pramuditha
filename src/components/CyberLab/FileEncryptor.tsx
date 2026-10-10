@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import JSZip from 'jszip';
 import ToolDropzone from './ToolDropzone';
+import { saveFile } from '../../downloadFile';
 
 export default function FileEncryptor() {
   const [mode, setMode] = useState<'encrypt' | 'decrypt'>('encrypt');
@@ -85,16 +86,11 @@ export default function FileEncryptor() {
     return score;
   };
 
-  const generateAndDownloadKeyFile = () => {
+  const generateAndDownloadKeyFile = async () => {
     const rawKey = window.crypto.getRandomValues(new Uint8Array(32)); // 256-bit key
     const blob = new Blob([rawKey], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'secure-vault.key';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    await saveFile(url, 'secure-vault.key', 'application/octet-stream');
     URL.revokeObjectURL(url);
     
     // Simulate loading the key file instantly so they can proceed
@@ -597,14 +593,13 @@ export default function FileEncryptor() {
                     <div className="mb-4 p-4 bg-green-500/10 border border-green-500/30 rounded-xl text-green-600 dark:text-green-400 font-bold flex items-center gap-3 justify-center text-sm">
                       <i className="fas fa-check-circle text-lg"></i> Successfully {mode === 'encrypt' ? 'encrypted' : 'decrypted and verified'}!
                     </div>
-                    <a 
-                      href={resultUrl}
-                      download={resultName!}
+                    <button 
+                      onClick={() => void saveFile(resultUrl, resultName!, 'application/octet-stream')}
                       className="w-full p-4 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-3 text-sm hover:shadow-md hover:shadow-green-500/20 active:scale-[0.98]"
                     >
                       <i className="fas fa-download text-lg shrink-0"></i>
-                      <span className="truncate">Download {resultName}</span>
-                    </a>
+                      <span className="truncate">Save {resultName}</span>
+                    </button>
                   </motion.div>
                 )}
               </div>

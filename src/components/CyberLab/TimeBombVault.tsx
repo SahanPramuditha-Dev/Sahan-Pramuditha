@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ToolDropzone from './ToolDropzone';
 import Dropdown from './Dropdown';
 import DateTimePicker from './DateTimePicker';
+import { saveFile } from '../../downloadFile';
 
 export default function TimeBombVault() {
   const [file, setFile] = useState<File | null>(null);
@@ -330,13 +331,12 @@ export default function TimeBombVault() {
                     <h4 className="font-bold text-xl text-textMain mb-2">Payload Armed & Ready</h4>
                     <p className="text-sm text-textMuted mb-6">Your file is now locked inside an HTML Time-Bomb. It is configured to self-destruct exactly as specified or after 3 failed attempts.</p>
                     
-                    <a 
-                      href={resultUrl} 
-                      download={resultName!}
+                    <button 
+                      onClick={() => void saveFile(resultUrl, resultName!, 'text/html')}
                       className="flex w-full bg-accent text-white font-bold rounded-xl py-4 hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 items-center justify-center gap-2"
                     >
-                      <i className="fas fa-download"></i> Download HTML Bomb
-                    </a>
+                      <i className="fas fa-download"></i> Save HTML Bomb
+                    </button>
                   </div>
                 )}
               </motion.div>

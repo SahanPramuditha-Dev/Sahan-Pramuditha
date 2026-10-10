@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ToolDropzone from './ToolDropzone';
+import { saveFile } from '../../downloadFile';
 
 export default function SecretMessageVault() {
   const [file, setFile] = useState<File | null>(null);
@@ -534,13 +535,12 @@ export default function SecretMessageVault() {
                       </div>
                       <h3 className="font-bold text-green-600 dark:text-green-400 text-lg mb-2">Payload Hidden Successfully</h3>
                       <p className="text-sm text-textMain mb-6">The image now contains your secret message and looks completely normal.</p>
-                      <a 
-                        href={resultUrl}
-                        download={`stego_${file.name}`}
+                      <button 
+                        onClick={() => void saveFile(resultUrl, `stego_${file.name}`, 'image/png')}
                         className="py-3 px-8 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 transition-all shadow-md hover:shadow-green-500/20 active:scale-[0.98] flex items-center gap-2"
                       >
-                        <i className="fas fa-download"></i> Download Stego Image
-                      </a>
+                        <i className="fas fa-download"></i> Save Stego Image
+                      </button>
                     </div>
                   )}
                   

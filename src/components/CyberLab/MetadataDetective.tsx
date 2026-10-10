@@ -5,6 +5,7 @@ import exifr from 'exifr';
 import { PDFDocument } from 'pdf-lib';
 import JSZip from 'jszip';
 import ToolDropzone from './ToolDropzone';
+import { saveFile } from '../../downloadFile';
 
 export default function MetadataDetective() {
   const [file, setFile] = useState<File | null>(null);
@@ -555,15 +556,20 @@ export default function MetadataDetective() {
                         <i className="fas fa-check-circle"></i> Image completely wiped.
                       </div>
                     )}
-                    <a 
-                      href={cleanedUrl || URL.createObjectURL(file)}
-                      download={cleanedUrl ? `clean_${file.name}` : file.name}
-                      onClick={() => setTimeout(() => setShowPopup(false), 500)}
+                    <button 
+                      onClick={() => {
+                        void saveFile(
+                          cleanedUrl || URL.createObjectURL(file),
+                          cleanedUrl ? `clean_${file.name}` : file.name,
+                          file.type || 'application/octet-stream'
+                        );
+                        setTimeout(() => setShowPopup(false), 500);
+                      }}
                       className="w-full py-4 rounded-xl bg-green-500 text-white font-bold hover:bg-green-600 transition-all flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-green-500/20 active:scale-[0.98]"
                     >
                       <i className="fas fa-download"></i>
-                      Download {cleanedUrl ? 'Clean File' : 'File'}
-                    </a>
+                      Save {cleanedUrl ? 'Clean File' : 'File'}
+                    </button>
                   </motion.div>
                 ) : (
                   <div className="h-[56px]"></div>

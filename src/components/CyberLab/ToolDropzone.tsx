@@ -23,6 +23,7 @@ const ToolDropzone: React.FC<ToolDropzoneProps> = ({
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
     setIsDragging(true);
   };
 
@@ -33,13 +34,15 @@ const ToolDropzone: React.FC<ToolDropzoneProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    const droppedFiles = Array.from(e.dataTransfer.files ?? []);
+    if (droppedFiles.length > 0) {
       // If multiple is not allowed, just pass the first file
       if (!multiple) {
-        onDropFiles([e.dataTransfer.files[0]]);
+        onDropFiles([droppedFiles[0]]);
       } else {
-        onDropFiles(Array.from(e.dataTransfer.files));
+        onDropFiles(droppedFiles);
       }
     }
   };
@@ -62,6 +65,7 @@ const ToolDropzone: React.FC<ToolDropzoneProps> = ({
       exit={{ opacity: 0, scale: 0.95 }}
       transition={{ duration: 0.2 }}
       onClick={() => fileInputRef.current?.click()}
+      onDragEnter={handleDragOver}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -75,6 +79,7 @@ const ToolDropzone: React.FC<ToolDropzoneProps> = ({
       {isDragging && (
         <motion.div 
           className="absolute inset-0 bg-accent/5"
+          style={{ pointerEvents: 'none' }}
           animate={{ opacity: [0.3, 0.8, 0.3] }}
           transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
         />

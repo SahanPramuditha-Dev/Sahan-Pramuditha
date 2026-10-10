@@ -1,75 +1,55 @@
-# React + TypeScript + Vite
+# Sahan Pramuditha - Personal Portfolio
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A sleek, modern, and highly interactive personal portfolio built with React, TypeScript, Tailwind CSS, and Framer Motion.
 
-Currently, two official plugins are available:
+## 🚀 Live Preview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+*(Insert Live Link Here)*
 
-## React Compiler
+## 📸 Screenshots
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Light Mode
+![Light Mode](public/screenshot-light.png)
 
-## Expanding the ESLint configuration
+### Dark Mode
+![Dark Mode](public/screenshot-dark.png)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## ✨ Features
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Dynamic Theme Toggling:** Seamlessly switch between Light and Dark modes.
+- **Bento Box Grid Layout:** Modern, masonry-style card UI that adapts perfectly to desktop and mobile.
+- **Interactive Animations:** Powered by Framer Motion for buttery smooth entry animations, hover states, and transitions.
+- **Glassmorphism Dock:** A floating Apple-style navigation dock at the bottom of the screen.
+- **Custom Contact Modal:** A minimalist, SaaS-style contact form with built-in loading states and success transitions.
+- **Fully Responsive:** Carefully crafted breakpoints to ensure it looks beautiful on devices of all sizes.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🛠️ Tech Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Framework:** React 18
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS (with custom utility classes)
+- **Animations:** Framer Motion
+- **Icons:** FontAwesome
+- **Build Tool:** Vite
 
-```
+## 📦 Running Locally
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/SahanPramuditha-Dev/portfolio.git
+   ```
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-```
+4. **Build for production**
+   ```bash
+   npm run build
+   ```

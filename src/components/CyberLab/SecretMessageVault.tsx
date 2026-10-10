@@ -234,7 +234,6 @@ export default function SecretMessageVault() {
     if (droppedFile.type === 'image/png') {
       const url = URL.createObjectURL(droppedFile);
       setFile(droppedFile);
-      setPreviewUrl(url);
       setErrorMsg("");
       
       const img = new Image();

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import ToolDropzone from './ToolDropzone';
@@ -17,12 +17,14 @@ export default function SecretMessageVault() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [capacityBytes, setCapacityBytes] = useState<number>(0);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
+  const handleDropFiles = async (droppedFiles: File[]) => {
+    const selected = droppedFiles[0];
     if (!selected) return;
-    
+    if (selected.type !== 'image/png') {
+      setErrorMsg("Only PNG images are supported for steganography.");
+      return;
+    }
+
     setFile(selected);
     setShowPopup(true);
     setSecretText('');
@@ -32,8 +34,10 @@ export default function SecretMessageVault() {
     setErrorMsg(null);
 
     // Calculate capacity
+    setMode('hide');
+    const url = URL.createObjectURL(selected);
     const img = new Image();
-    img.src = URL.createObjectURL(selected);
+    img.src = url;
     img.onload = () => {
       const canvas = document.createElement('canvas');
       canvas.width = img.width;
@@ -43,7 +47,31 @@ export default function SecretMessageVault() {
         ctx.drawImage(img, 0, 0);
         const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         setCapacityBytes(Math.floor((data.length / 4 * 3) / 8));
+
+        const header = new Uint8Array(9);
+        let byteIndex = 0;
+        let bitIndex = 0;
+        for (let i = 0; i < data.length && byteIndex < header.length; i += 4) {
+          for (const channel of [0, 1, 2]) {
+            header[byteIndex] = (header[byteIndex] << 1) | (data[i + channel] & 1);
+            bitIndex++;
+            if (bitIndex === 8) {
+              bitIndex = 0;
+              byteIndex++;
+              if (byteIndex === header.length) break;
+            }
+          }
+        }
+
+        if (new TextDecoder().decode(header.slice(0, 4)) === 'STGO') {
+          setMode('extract');
+        }
       }
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      setErrorMsg("The selected PNG could not be read.");
     };
   };
 
@@ -226,25 +254,6 @@ export default function SecretMessageVault() {
       setErrorMsg(err.message || "An error occurred.");
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleDropFiles = (droppedFiles: File[]) => {
-    const droppedFile = droppedFiles[0];
-    if (droppedFile.type === 'image/png') {
-      const url = URL.createObjectURL(droppedFile);
-      setFile(droppedFile);
-      setErrorMsg("");
-      
-      const img = new Image();
-      img.onload = () => {
-        const pixels = img.width * img.height;
-        const maxBytes = Math.floor((pixels * 3) / 8) - 16;
-        setCapacityBytes(maxBytes);
-      };
-      img.src = url;
-    } else {
-      setErrorMsg("Only PNG images are supported for steganography.");
     }
   };
 

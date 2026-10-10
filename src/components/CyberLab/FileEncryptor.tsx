@@ -264,6 +264,12 @@ export default function FileEncryptor() {
     setFiles(droppedFiles);
     setErrorMsg("");
     setResultUrl(null);
+
+    if (droppedFiles.length === 1 && droppedFiles[0].name.endsWith('.encrypted')) {
+      setMode('decrypt');
+    } else if (droppedFiles.length > 1) {
+      setMode('encrypt');
+    }
   };
 
   return (

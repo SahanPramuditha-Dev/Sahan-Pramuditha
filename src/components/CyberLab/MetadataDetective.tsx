@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import exifr from 'exifr';
@@ -13,11 +13,7 @@ export default function MetadataDetective() {
   const [isCleaning, setIsCleaning] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files?.[0];
-    if (!selected) return;
+  const processFile = async (selected: File) => {
     
     setFile(selected);
     setCleanedUrl(null);

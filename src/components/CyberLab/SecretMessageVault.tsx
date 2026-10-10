@@ -190,9 +190,55 @@ export default function SecretMessageVault() {
         const elapsed = Date.now() - startTs;
         if (elapsed < 1500) await new Promise(r => setTimeout(r, 1500 - elapsed));
 
-        canvas.toBlob((blob) => {
-          if (blob) setResultUrl(URL.createObjectURL(blob));
-        }, 'image/png');
+        const stegoBlob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("The stego image could not be generated."));
+          }, 'image/png');
+        });
+
+        const verificationUrl = URL.createObjectURL(stegoBlob);
+        const verificationImage = new Image();
+        verificationImage.src = verificationUrl;
+        await new Promise<void>((resolve, reject) => {
+          verificationImage.onload = () => resolve();
+          verificationImage.onerror = () => reject(new Error("The generated image could not be verified."));
+        });
+
+        const verificationCanvas = document.createElement('canvas');
+        verificationCanvas.width = verificationImage.width;
+        verificationCanvas.height = verificationImage.height;
+        const verificationContext = verificationCanvas.getContext('2d');
+        if (!verificationContext) throw new Error("The generated image could not be verified.");
+        verificationContext.drawImage(verificationImage, 0, 0);
+        const verificationPixels = verificationContext.getImageData(
+          0,
+          0,
+          verificationCanvas.width,
+          verificationCanvas.height
+        ).data;
+        const verificationHeader = new Uint8Array(4);
+        let verificationByte = 0;
+        let verificationBit = 0;
+        for (let i = 0; i < verificationPixels.length && verificationByte < verificationHeader.length; i += 4) {
+          for (const channel of [0, 1, 2]) {
+            verificationHeader[verificationByte] =
+              (verificationHeader[verificationByte] << 1) | (verificationPixels[i + channel] & 1);
+            verificationBit++;
+            if (verificationBit === 8) {
+              verificationBit = 0;
+              verificationByte++;
+              if (verificationByte === verificationHeader.length) break;
+            }
+          }
+        }
+        URL.revokeObjectURL(verificationUrl);
+
+        if (new TextDecoder().decode(verificationHeader) !== 'STGO') {
+          throw new Error("The stego payload could not be verified. Please try another PNG image.");
+        }
+
+        setResultUrl(URL.createObjectURL(stegoBlob));
 
       } else {
         // EXTRACT MODE

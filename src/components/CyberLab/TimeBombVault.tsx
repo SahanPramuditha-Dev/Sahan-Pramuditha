@@ -36,7 +36,7 @@ export default function TimeBombVault() {
       setErrorMsg("Password must be at least 4 characters long.");
       return;
     }
-    let expiresAt = 0;
+    let expiresAt: number;
     if (expiryMode === 'duration') {
       if (expiryValue < 1) {
         setErrorMsg("Duration must be at least 1.");
@@ -116,7 +116,7 @@ export default function TimeBombVault() {
       );
 
       // Convert to Base64
-      const bufferToBase64 = (buffer: ArrayBuffer) => {
+      const bufferToBase64 = (buffer: ArrayBuffer | Uint8Array) => {
         let binary = '';
         const bytes = new Uint8Array(buffer);
         const len = bytes.byteLength;

@@ -84,11 +84,13 @@ export default function SecretMessageVault() {
 
   const deriveKeyFromPassword = async (pwd: string, salt: Uint8Array) => {
     const enc = new TextEncoder();
+    const saltBuffer = new Uint8Array(salt.length);
+    saltBuffer.set(salt);
     const keyMaterial = await window.crypto.subtle.importKey(
       "raw", enc.encode(pwd), "PBKDF2", false, ["deriveBits", "deriveKey"]
     );
     return window.crypto.subtle.deriveKey(
-      { name: "PBKDF2", salt: salt, iterations: 100000, hash: "SHA-256" },
+      { name: "PBKDF2", salt: saltBuffer.buffer, iterations: 100000, hash: "SHA-256" },
       keyMaterial, { name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]
     );
   };
@@ -288,7 +290,7 @@ export default function SecretMessageVault() {
             
             setExtractedMessage(dec.decode(decrypted));
           } catch(e) {
-            throw new Error("Decryption failed. Incorrect password or corrupted payload.");
+            throw new Error("Decryption failed. Incorrect password or corrupted payload.", { cause: e });
           }
         } else {
           const elapsed = Date.now() - startTs;

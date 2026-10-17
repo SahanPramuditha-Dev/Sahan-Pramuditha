@@ -44,6 +44,8 @@ export default function FileEncryptor() {
 
   const deriveKeyFromPassword = async (pwd: string, salt: Uint8Array) => {
     const enc = new TextEncoder();
+    const saltBuffer = new Uint8Array(salt.length);
+    saltBuffer.set(salt);
     const keyMaterial = await window.crypto.subtle.importKey(
       "raw",
       enc.encode(pwd),
@@ -54,7 +56,7 @@ export default function FileEncryptor() {
     return window.crypto.subtle.deriveKey(
       {
         name: "PBKDF2",
-        salt: salt as any,
+        salt: saltBuffer.buffer,
         iterations: 100000,
         hash: "SHA-256"
       },
@@ -66,9 +68,11 @@ export default function FileEncryptor() {
   };
 
   const importRawKey = async (rawKeyBytes: Uint8Array) => {
+    const keyBuffer = new Uint8Array(rawKeyBytes.length);
+    keyBuffer.set(rawKeyBytes);
     return window.crypto.subtle.importKey(
       "raw",
-      rawKeyBytes,
+      keyBuffer.buffer,
       { name: "AES-GCM" },
       true,
       ["encrypt", "decrypt"]
@@ -237,7 +241,7 @@ export default function FileEncryptor() {
         } catch (e: any) {
           console.error(e);
           // GCM Authentication Tag failure throws an OperationError in WebCrypto
-          throw new Error("⚠️ INTEGRITY FAILURE: The decryption password/key is incorrect, OR the file has been tampered with and modified maliciously. AES-GCM Authentication Tag rejected the payload.");
+          throw new Error("⚠️ INTEGRITY FAILURE: The decryption password/key is incorrect, OR the file has been tampered with and modified maliciously. AES-GCM Authentication Tag rejected the payload.", { cause: e });
         }
       }
     } catch (err: any) {

@@ -164,7 +164,9 @@ export default function MetadataDetective() {
         pdfDoc.setModificationDate(epoch);
         
         const pdfBytes = await pdfDoc.save();
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const pdfBuffer = new Uint8Array(pdfBytes.length);
+        pdfBuffer.set(pdfBytes);
+        const blob = new Blob([pdfBuffer.buffer], { type: 'application/pdf' });
         await waitDelay();
         setCleanedUrl(URL.createObjectURL(blob));
       } catch (err) { console.error(err); }
@@ -414,18 +416,67 @@ export default function MetadataDetective() {
                       </span>
                     </div>
 
-                    {/* GPS Warning */}
-                    {(metadata.latitude || metadata.longitude) && (
-                      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-4">
-                        <div className="w-10 h-10 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center shrink-0">
-                          <i className="fas fa-map-marker-alt"></i>
-                        </div>
+                    {/* Privacy Risk Level Banner */}
+                    <div className="flex items-center justify-between p-3.5 bg-card border border-borderSubtle rounded-2xl">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          (metadata.latitude || metadata.longitude || metadata._hasRiskyScripts)
+                            ? 'bg-red-500 animate-pulse'
+                            : Object.keys(metadata).length > 5 ? 'bg-amber-500' : 'bg-emerald-500'
+                        }`} />
                         <div>
-                          <h5 className="font-bold text-red-600 dark:text-red-400">Exact Location Detected</h5>
-                          <p className="text-sm text-red-500/80 mt-1">This photo contains GPS coordinates that reveal exactly where it was taken.</p>
-                          <div className="mt-3 font-mono text-xs bg-black/10 p-2 rounded-lg text-red-600 dark:text-red-300 w-max">
-                            Lat: {metadata.latitude.toFixed(6)} <br/> Lng: {metadata.longitude.toFixed(6)}
+                          <p className="text-xs font-bold text-textMain">
+                            Privacy Risk: {(metadata.latitude || metadata.longitude || metadata._hasRiskyScripts) ? 'HIGH' : Object.keys(metadata).length > 5 ? 'MODERATE' : 'LOW'}
+                          </p>
+                          <p className="text-[10px] text-textMuted">
+                            {(metadata.latitude || metadata.longitude) ? 'Exposes precise physical coordinates & camera hardware' : 'Contains device or author attributes'}
+                          </p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-mono px-2.5 py-1 rounded-full font-bold border ${
+                        (metadata.latitude || metadata.longitude || metadata._hasRiskyScripts)
+                          ? 'bg-red-500/10 border-red-500/30 text-red-500'
+                          : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      }`}>
+                        {(metadata.latitude || metadata.longitude) ? 'GPS LEAK DETECTED' : 'EXIF AUDITED'}
+                      </span>
+                    </div>
+
+                    {/* GPS Interactive Map & Warning */}
+                    {(metadata.latitude || metadata.longitude) && (
+                      <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex flex-col gap-3">
+                        <div className="flex items-start gap-4">
+                          <div className="w-10 h-10 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center shrink-0">
+                            <i className="fas fa-map-marker-alt"></i>
                           </div>
+                          <div className="flex-1">
+                            <h5 className="font-bold text-red-600 dark:text-red-400">Exact Physical Coordinates Detected</h5>
+                            <p className="text-sm text-red-500/80 mt-1">This photo contains GPS coordinates that pinpoint where it was captured.</p>
+                            <div className="mt-2 font-mono text-xs bg-black/10 dark:bg-white/5 p-2 rounded-lg text-red-600 dark:text-red-300 flex items-center justify-between">
+                              <span>Lat: {metadata.latitude.toFixed(6)} • Lng: {metadata.longitude.toFixed(6)}</span>
+                              <a
+                                href={`https://www.google.com/maps?q=${metadata.latitude},${metadata.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="underline font-bold text-accent hover:opacity-80"
+                              >
+                                View in Google Maps <i className="fas fa-external-link-alt text-[10px]"></i>
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Interactive OpenStreetMap Pin View */}
+                        <div className="relative w-full h-44 rounded-xl overflow-hidden border border-red-500/20 shadow-inner bg-black/5">
+                          <iframe
+                            title="GPS Coordinates Map"
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            scrolling="no"
+                            src={`https://www.openstreetmap.org/export/embed.html?bbox=${metadata.longitude - 0.005}%2C${metadata.latitude - 0.003}%2C${metadata.longitude + 0.005}%2C${metadata.latitude + 0.003}&layer=mapnik&marker=${metadata.latitude}%2C${metadata.longitude}`}
+                            className="w-full h-full filter saturate-150 contrast-105"
+                          />
                         </div>
                       </div>
                     )}

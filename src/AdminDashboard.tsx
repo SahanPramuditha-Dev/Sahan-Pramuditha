@@ -1,59 +1,63 @@
-import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth';
-import type { User } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import HeroSectionCMS from './components/HeroSectionCMS';
+import { DEFAULT_HERO_CONFIG } from './types/cms';
+import ProjectsCMS from './components/ProjectsCMS';
+import CertificatesCMS from './components/CertificatesCMS';
+import StatusCMS from './components/StatusCMS';
+import ServicesCMS from './components/ServicesCMS';
+import TestimonialsCMS from './components/TestimonialsCMS';
+import ArticlesCMS from './components/ArticlesCMS';
+import AdminLogin from './components/AdminLogin';
+
+
 
 export default function AdminDashboard() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [isSuccessOverlay, setIsSuccessOverlay] = useState(false);
 
-  // CMS State
-  const [status, setStatus] = useState('Seeking 2026 Internship');
+  const [activeTab, setActiveTab] = useState<'hero'|'status'|'certs'|'articles'|'projects'|'services'|'testimonials'>('hero');
+
   const [isSaving, setIsSaving] = useState(false);
-  const [certsJson, setCertsJson] = useState('[\n  \n]');
-  const [isSavingCerts, setIsSavingCerts] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    return document.documentElement.classList.contains('dark') || window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    document.documentElement.classList.toggle('dark', nextDark);
+  };
+
+  // Auto-Logout Inactivity Timer (15 minutes)
+  useEffect(() => {
+    if (!user) return;
+    let timeoutId: any;
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        console.log("Session expired due to inactivity.");
+        signOut(auth);
+      }, 15 * 60 * 1000);
+    };
+    const events = ['mousemove', 'mousedown', 'keypress', 'touchmove', 'scroll'];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [user]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        // Fetch current status & certs from Firestore
-        try {
-          const statusSnap = await getDoc(doc(db, 'portfolio', 'status'));
-          if (statusSnap.exists()) {
-            setStatus(statusSnap.data().text);
-          }
-          
-          const certsSnap = await getDoc(doc(db, 'portfolio', 'certificates'));
-          if (certsSnap.exists() && certsSnap.data().items) {
-            setCertsJson(JSON.stringify(certsSnap.data().items, null, 2));
-          } else {
-            // Default boilerplate if none exists
-            setCertsJson(JSON.stringify([
-              { id: '1', icon: "fab fa-microsoft text-blue-500", title: "Microsoft FoundryX", subtitle: "Generative AI Event Attendance", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '2', icon: "fas fa-network-wired text-cyan-500", title: "Cisco", subtitle: "Introduction to Modern AI", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '3', icon: "fas fa-leaf text-green-500", title: "MongoDB", subtitle: "Python Developer Path", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '4', icon: "fab fa-github text-gray-800 dark:text-white", title: "GitHub Actions", subtitle: "Beginner Badge", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '5', icon: "fas fa-laptop-code text-teal-500", title: "DataCamp", subtitle: "Introduction to GitHub Concepts", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '6', icon: "fas fa-laptop-code text-teal-500", title: "DataCamp", subtitle: "Intermediate Git", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '7', icon: "fas fa-network-wired text-cyan-500", title: "Cisco", subtitle: "Networking Basics", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '8', icon: "fas fa-shield-alt text-cyan-500", title: "Cisco", subtitle: "Introduction to Cybersecurity", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '9', icon: "fab fa-free-code-camp text-indigo-500", title: "freeCodeCamp", subtitle: "Scientific Computing with Python", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '10', icon: "fab fa-aws text-orange-500", title: "AWS Academy", subtitle: "AWS Cloud Foundations", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '11', icon: "fas fa-chart-bar text-yellow-500", title: "Microsoft Learn", subtitle: "Introduction to Power BI", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '12', icon: "fas fa-shield-alt text-red-500", title: "OPSWAT Academy", subtitle: "Critical Infrastructure Protection", date: "2026", proofUrl: "", verifyUrl: "" },
-              { id: '13', icon: "fas fa-leaf text-green-500", title: "MongoDB", subtitle: "Core Concepts and Architecture", date: "2026", proofUrl: "", verifyUrl: "" }
-            ], null, 2));
-          }
-        } catch (err) {
-          console.error("Error fetching CMS data", err);
-        }
-      }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -62,9 +66,26 @@ export default function AdminDashboard() {
     e.preventDefault();
     setError('');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const loginEmail = email.includes('@') ? email : `${email.toLowerCase()}@admin.com`;
+      await setPersistence(auth, browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, loginEmail, password);
+      setIsSuccessOverlay(true);
+      setTimeout(() => setIsSuccessOverlay(false), 2500);
     } catch (err: any) {
-      setError(err.message || 'Failed to login');
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        try {
+          const loginEmail = email.includes('@') ? email : `${email.toLowerCase()}@admin.com`;
+          await import('firebase/auth').then(({ createUserWithEmailAndPassword }) => {
+            return createUserWithEmailAndPassword(auth, loginEmail, password);
+          });
+          setIsSuccessOverlay(true);
+          setTimeout(() => setIsSuccessOverlay(false), 2500);
+        } catch (createErr: any) {
+          setError(createErr.message.replace('Firebase:', ''));
+        }
+      } else {
+        setError(err.message.replace('Firebase:', ''));
+      }
     }
   };
 
@@ -72,164 +93,173 @@ export default function AdminDashboard() {
     await signOut(auth);
   };
 
-  const handleSaveStatus = async () => {
+
+
+  const seedDatabase = async () => {
     setIsSaving(true);
     try {
-      await setDoc(doc(db, 'portfolio', 'status'), { text: status });
-      alert('Status updated successfully!');
-    } catch (err: any) {
-      alert('Error updating status: ' + err.message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+      const defaultData = {
+        hero: DEFAULT_HERO_CONFIG,
+        status: { text: "Seeking 2026 Internship" },
+        certificates: { items: [
+          { id: 1, icon: "fas fa-shield-alt", title: "Cybersecurity Essentials", subtitle: "Cisco Networking Academy", date: "2024" },
+          { id: 2, icon: "fas fa-network-wired", title: "CCNA: Enterprise Networking", subtitle: "Cisco Networking Academy", date: "2024" }
+        ]},
+        articles: { items: [
+          { title: "Building a Modern Portfolio", platform: "Medium", date: "Oct 2026", readTime: "5 min", url: "#", icon: "fab fa-medium" }
+        ]},
+        projects: { items: [
+          { title: "StudyOS Platform", desc: "An all-in-one student workspace integrating task management, SM-2 spaced repetition, and Orion.", tags: ["React 19", "Firebase", "Gen AI"], img: "studyos", link: "#", features: ["AI tutoring", "Spaced Repetition"] },
+          { title: "FamilyTree Directory", desc: "A scalable, responsive church directory and census management system built for over 500+ parishioners.", tags: ["React", "Tailwind"], img: "familytree", link: "#", features: ["Dynamic search", "Role-based access"] }
+        ]},
+        services: { items: [
+          { id: 1, title: "Frontend Engineering", desc: "Building scalable, pixel-perfect UIs.", icon: "fas fa-code", color: "blue", tech: ["React", "Next.js"] },
+          { id: 2, title: "Backend Architecture", desc: "Designing robust APIs and databases.", icon: "fas fa-server", color: "green", tech: ["Node.js", "Express"] }
+        ]},
+        testimonials: { items: [
+          { id: 1, name: "Dr. Smith", role: "Professor", text: "Exceptional student with great technical aptitude.", avatar: "fas fa-user-tie" }
+        ]}
+      };
 
-  const handleSaveCerts = async () => {
-    setIsSavingCerts(true);
-    try {
-      const items = JSON.parse(certsJson);
-      if (!Array.isArray(items)) throw new Error("JSON must be an array");
-      await setDoc(doc(db, 'portfolio', 'certificates'), { items });
-      alert('Certificates updated successfully!');
+      for (const [collection, data] of Object.entries(defaultData)) {
+        await setDoc(doc(db, 'portfolio', collection), data);
+      }
+      alert("Database seeded successfully! Reload the page.");
     } catch (err: any) {
-      alert('Error updating certificates. Check your JSON format: ' + err.message);
-    } finally {
-      setIsSavingCerts(false);
+      alert("Failed to seed: " + err.message);
     }
+    setIsSaving(false);
   };
-
-  if (loading) {
-    return <div className="min-h-screen bg-bgMain text-textMain flex items-center justify-center">Loading...</div>;
-  }
 
   if (!user) {
-    return (
-      <div className="min-h-screen bg-bgMain text-textMain flex flex-col items-center justify-center p-4">
-        <div className="w-full max-w-md bg-card p-8 rounded-3xl border border-borderSubtle shadow-xl">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center text-accent">
-              <i className="fas fa-lock text-2xl"></i>
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-center mb-8">Admin Login</h1>
-          
-          {error && <div className="mb-4 p-3 bg-red-500/10 border border-red-500/50 text-red-500 rounded-xl text-sm">{error}</div>}
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-semibold text-textMuted mb-2">Email</label>
-              <input 
-                type="email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-bgMain border border-borderSubtle rounded-xl px-4 py-3 text-textMain focus:outline-none focus:border-accent transition-colors"
-                placeholder="admin@example.com"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-textMuted mb-2">Password</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-bgMain border border-borderSubtle rounded-xl px-4 py-3 text-textMain focus:outline-none focus:border-accent transition-colors"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <button 
-              type="submit" 
-              className="w-full bg-accent text-white font-bold rounded-xl py-3 mt-4 hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20"
-            >
-              Access Dashboard
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+    return <AdminLogin />;
   }
 
+  const tabs = [
+    { id: 'hero', label: 'Hero Section', icon: 'fa-wand-magic-sparkles' },
+    { id: 'status', label: 'Availability', icon: 'fa-broadcast-tower' },
+    { id: 'certs', label: 'Certificates', icon: 'fa-certificate' },
+    { id: 'articles', label: 'Articles', icon: 'fa-pen-nib' },
+    { id: 'projects', label: 'Projects', icon: 'fa-code' },
+    { id: 'services', label: 'Services', icon: 'fa-layer-group' },
+    { id: 'testimonials', label: 'Testimonials', icon: 'fa-quote-left' }
+  ];
+
   return (
-    <div className="min-h-screen bg-bgMain text-textMain p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className={`min-h-screen ${isDark ? 'dark' : ''} bg-bgMain text-textMain relative selection:bg-accent selection:text-white`}>
+      
+      {/* Ambient Glow Orbs mirroring the Homepage Aesthetic */}
+      <div className="fixed -top-40 -left-40 w-96 h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none"></div>
+      <div className="fixed top-1/2 -right-40 w-96 h-96 bg-purple-500/10 rounded-full blur-[140px] pointer-events-none"></div>
+
+      <div className="max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 xl:p-10 relative z-10 flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-6 rounded-3xl border border-borderSubtle">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center text-accent">
-              <i className="fas fa-hammer text-xl"></i>
+        {/* Responsive Navigation Sidebar / Header - Locked Sticky on Desktop */}
+        <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-4 lg:sticky lg:top-8 z-30">
+          
+          {/* Brand & Identity Card */}
+          <div className="bg-card/80 backdrop-blur-xl p-5 sm:p-6 rounded-[2rem] border border-borderSubtle shadow-xl flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3.5">
+              <div className="w-11 h-11 bg-accent/15 text-accent rounded-2xl flex items-center justify-center font-black text-lg shadow-sm border border-accent/20">
+                <i className="fas fa-hammer"></i>
+              </div>
+              <div className="overflow-hidden">
+                <h1 className="font-black text-base leading-tight tracking-tight text-textMain">Portfolio CMS</h1>
+                <p className="text-[10px] text-textMuted uppercase tracking-widest truncate font-semibold mt-0.5">{user?.email}</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold">Portfolio CMS</h1>
-              <p className="text-sm text-textMuted">{user.email}</p>
+
+            {/* Dark Mode & Live Site Link */}
+            <div className="flex items-center gap-1.5">
+              <button 
+                onClick={toggleTheme} 
+                className="w-9 h-9 rounded-xl bg-bgMain border border-borderSubtle text-textMain hover:text-accent flex items-center justify-center transition-all shadow-sm active:scale-95"
+                title="Toggle Theme"
+              >
+                <i className={`fas ${isDark ? 'fa-sun' : 'fa-moon'} text-xs`}></i>
+              </button>
+              <a 
+                href="/" 
+                target="_blank" 
+                rel="noreferrer" 
+                className="w-9 h-9 rounded-xl bg-accent/10 border border-accent/20 text-accent hover:bg-accent hover:text-white flex items-center justify-center transition-all shadow-sm active:scale-95"
+                title="View Live Portfolio"
+              >
+                <i className="fas fa-arrow-up-right-from-square text-xs"></i>
+              </a>
             </div>
           </div>
-          <button 
-            onClick={handleLogout}
-            className="px-4 py-2 bg-borderSubtle/20 hover:bg-borderSubtle/40 rounded-xl font-semibold transition-colors flex items-center gap-2 text-sm"
-          >
-            <i className="fas fa-sign-out-alt"></i> Logout
-          </button>
-        </div>
 
-        {/* CMS Controls */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          
-          {/* Status Controller */}
-          <div className="bg-card p-6 rounded-3xl border border-borderSubtle flex flex-col">
-            <h2 className="text-lg font-bold mb-2 flex items-center gap-2">
-              <i className="fas fa-broadcast-tower text-accent"></i> Availability Status
-            </h2>
-            <p className="text-sm text-textMuted mb-6">This controls the pulsing status badge on your Education card.</p>
-            
-            <input 
-              type="text" 
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-bgMain border border-borderSubtle rounded-xl px-4 py-3 text-textMain focus:outline-none focus:border-accent transition-colors mb-4"
-              placeholder="e.g. Seeking 2026 Internship"
-            />
-            
+          {/* Navigation Pill List (Horizontal Scroll on Mobile, Vertical Stack on Desktop) */}
+          <div className="bg-card/80 backdrop-blur-xl p-3 sm:p-4 rounded-[2rem] border border-borderSubtle shadow-xl flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-y-auto no-scrollbar py-3 lg:py-4 lg:flex-1">
+            {tabs.map(tab => (
+              <button 
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all whitespace-nowrap active:scale-98 shrink-0 lg:shrink ${activeTab === tab.id ? 'bg-accent text-white shadow-lg shadow-accent/25' : 'text-textMuted hover:bg-bgMain hover:text-textMain'}`}
+              >
+                <i className={`fas ${tab.icon} w-4 text-center text-sm`}></i>
+                <span>{tab.label}</span>
+                {activeTab === tab.id && (
+                  <span className="hidden lg:inline ml-auto w-1.5 h-1.5 rounded-full bg-white"></span>
+                )}
+              </button>
+            ))}
+
+            <div className="hidden lg:block my-2 border-t border-borderSubtle shrink-0"></div>
+
+            {/* Quick Action Controls */}
+            <div className="hidden lg:flex flex-col gap-2 pt-1 shrink-0 mt-auto">
+              <button 
+                onClick={seedDatabase} 
+                disabled={isSaving} 
+                className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-xs bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-all border border-purple-500/20 active:scale-95 disabled:opacity-50"
+              >
+                <i className="fas fa-database text-xs"></i> Seed Defaults
+              </button>
+              <button 
+                onClick={handleLogout} 
+                className="flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-2xl font-bold text-xs text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 transition-all border border-rose-500/20 active:scale-95"
+              >
+                <i className="fas fa-sign-out-alt text-xs"></i> Sign Out
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Footer Sign Out / Seed */}
+          <div className="flex lg:hidden items-center gap-2">
             <button 
-              onClick={handleSaveStatus}
-              disabled={isSaving}
-              className="mt-auto w-full bg-accent text-white font-bold rounded-xl py-3 hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 disabled:opacity-50"
+              onClick={seedDatabase} 
+              disabled={isSaving} 
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs bg-purple-500/10 text-purple-400 border border-purple-500/20"
             >
-              {isSaving ? 'Saving...' : 'Update Status'}
+              <i className="fas fa-database mr-1"></i> Seed
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="flex-1 py-2.5 rounded-xl font-bold text-xs text-rose-500 bg-rose-500/10 border border-rose-500/20"
+            >
+              <i className="fas fa-sign-out-alt mr-1"></i> Sign Out
             </button>
           </div>
 
-        </div>
+        </aside>
 
-        {/* Certificates & Events JSON Editor */}
-        <div className="mt-8 bg-card p-6 rounded-3xl border border-borderSubtle flex flex-col">
-          <h2 className="text-lg font-bold mb-2 flex items-center gap-2">
-            <i className="fas fa-certificate text-accent"></i> Manage Certifications
-          </h2>
-          <p className="text-sm text-textMuted mb-6">
-            Edit the JSON array below. Make sure to provide a valid `proofUrl` (link to image) and/or `verifyUrl` (link to credential) to enable the interactive gallery modal for that certificate!
-          </p>
+        {/* Main Content Responsive Canvas */}
+        <main className="w-full flex-1 min-w-0">
           
-          <textarea 
-            value={certsJson}
-            onChange={(e) => setCertsJson(e.target.value)}
-            className="w-full h-96 bg-bgMain border border-borderSubtle rounded-xl px-4 py-3 text-textMain focus:outline-none focus:border-accent transition-colors mb-4 font-mono text-sm whitespace-pre"
-            spellCheck="false"
-          />
-          
-          <div className="flex justify-end">
-            <button 
-              onClick={handleSaveCerts}
-              disabled={isSavingCerts}
-              className="px-8 bg-accent text-white font-bold rounded-xl py-3 hover:bg-accent/90 transition-colors shadow-lg shadow-accent/20 disabled:opacity-50"
-            >
-              {isSavingCerts ? 'Saving...' : 'Save Certificates'}
-            </button>
-          </div>
-        </div>
+          {activeTab === 'hero' && <HeroSectionCMS />}
+          {activeTab === 'status' && <StatusCMS />}
+          {activeTab === 'certs' && <CertificatesCMS />}
+          {activeTab === 'articles' && <ArticlesCMS />}
+          {activeTab === 'projects' && <ProjectsCMS />}
+          {activeTab === 'services' && <ServicesCMS />}
+          {activeTab === 'testimonials' && <TestimonialsCMS />}
 
+        </main>
       </div>
     </div>
   );
 }
+
+// Reload 54 
